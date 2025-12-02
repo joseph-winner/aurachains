@@ -353,9 +353,9 @@ function RoleDashboardPreview({
       <div className="pointer-events-none absolute inset-x-10 top-0 -z-10 h-40 bg-[radial-gradient(circle_at_top,_#22d3ee33,_transparent_55%)]" />
       <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-5 shadow-2xl shadow-cyan-500/30 backdrop-blur-sm lg:p-6">
         {/* Top row: role switch + info */}
-        <div className="mb-5 flex items-start justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-slate-900/90 p-1 text-xs">
+        <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="w-full sm:w-auto">
+            <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-slate-900/90 p-1 text-xs sm:inline-flex sm:rounded-full">
               {roles.map((role) => {
                 const isActive = role.key === activeRoleKey;
                 return (
@@ -389,7 +389,7 @@ function RoleDashboardPreview({
             </p>
           </div>
 
-          <div className="flex flex-col items-end gap-2 text-xs">
+          <div className="flex flex-row flex-wrap items-center gap-3 text-xs sm:flex-col sm:items-end sm:gap-2">
             <span className="inline-flex items-center gap-2 rounded-full bg-slate-900/80 px-3 py-1 text-slate-300">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
               Telemetry live
