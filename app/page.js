@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   FiBox,
   FiUser,
@@ -20,6 +20,9 @@ import {
   FiGlobe,
   FiKey,
   FiActivity,
+  FiMenu,
+  FiMoon,
+  FiSun,
 } from "react-icons/fi";
 
 const ROLE_CONFIG = {
@@ -146,20 +149,68 @@ const ROLE_CONFIG = {
   },
 };
 
-function page() {
+const THEME_STYLES = {
+  dark: {
+    page: "bg-slate-950 text-slate-100",
+    glow:
+      "bg-[radial-gradient(circle_at_top,_#22d3ee22,_transparent_60%),radial-gradient(circle_at_bottom,_#6366f122,_transparent_60%)]",
+    surface: "border border-slate-800 bg-slate-950/80 shadow-cyan-500/20",
+    softSurface: "border border-slate-800 bg-slate-900/80",
+    pill: "bg-slate-900/80 text-slate-200 border border-slate-800",
+    muted: "text-slate-400",
+    subMuted: "text-slate-500",
+    brandGlow: "shadow-lg shadow-cyan-500/40",
+  },
+  light: {
+    page: "bg-gradient-to-b from-slate-50 via-white to-slate-100 text-slate-900",
+    glow:
+      "bg-[radial-gradient(circle_at_top,_#22d3ee33,_transparent_55%),radial-gradient(circle_at_bottom,_#c084fc33,_transparent_60%)]",
+    surface: "border border-slate-200 bg-white shadow-lg shadow-slate-200/80",
+    softSurface: "border border-slate-200 bg-slate-50/80",
+    pill: "bg-white text-slate-700 border border-slate-200",
+    muted: "text-slate-600",
+    subMuted: "text-slate-500",
+    brandGlow: "shadow-md shadow-cyan-200/50",
+  },
+};
+
+function HomePage() {
   const [activeRoleKey, setActiveRoleKey] = useState("exporter");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [theme, setTheme] = useState(() => {
+    if (typeof window === "undefined") return "dark";
+    const saved = window.localStorage.getItem("aurachains-theme");
+    if (saved === "light" || saved === "dark") {
+      return saved;
+    }
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
+    return prefersDark ? "dark" : "light";
+  });
   const activeRole = ROLE_CONFIG[activeRoleKey];
 
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    window.localStorage.setItem("aurachains-theme", theme);
+  }, [theme]);
+
+  const palette = useMemo(() => THEME_STYLES[theme], [theme]);
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className={`min-h-screen transition-colors duration-500 ${palette.page}`}>
       {/* subtle glow background */}
-      <div className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-80 bg-[radial-gradient(circle_at_top,_#22d3ee22,_transparent_60%),radial-gradient(circle_at_bottom,_#6366f122,_transparent_60%)]" />
+      <div
+        className={`pointer-events-none fixed inset-x-0 top-0 -z-10 h-80 transition-all duration-500 ${palette.glow}`}
+      />
 
       <div className="mx-auto flex max-w-7xl flex-col px-4 pb-24 pt-6 lg:px-8 lg:pt-10">
         <Header
           mobileNavOpen={mobileNavOpen}
           setMobileNavOpen={setMobileNavOpen}
+          theme={theme}
+          setTheme={setTheme}
+          palette={palette}
         />
 
         <main className="mt-12 space-y-20 lg:mt-16 lg:space-y-24">
@@ -167,60 +218,104 @@ function page() {
             activeRoleKey={activeRoleKey}
             setActiveRoleKey={setActiveRoleKey}
             activeRole={activeRole}
+            theme={theme}
+            palette={palette}
           />
 
-          <HowItWorks />
+          <HowItWorks theme={theme} palette={palette} />
 
-          <RolePortals />
+          <RolePortals theme={theme} palette={palette} />
 
-          <RealtimeSection />
+          <RealtimeSection theme={theme} palette={palette} />
 
-          <BlockchainSection />
+          <BlockchainSection theme={theme} palette={palette} />
 
-          <AboutSection />
+          <AboutSection theme={theme} palette={palette} />
 
-          <Footer />
+          <Footer theme={theme} palette={palette} />
         </main>
       </div>
     </div>
   );
 }
 
-function Header({ mobileNavOpen, setMobileNavOpen }) {
+function Header({ mobileNavOpen, setMobileNavOpen, theme, setTheme, palette }) {
+  const toggleTheme = () => setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+
   return (
     <header className="relative flex items-center justify-between gap-4">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-400 to-indigo-500 text-sm font-bold uppercase tracking-tight text-slate-950 shadow-lg shadow-cyan-500/40">
+        <div
+          className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-400 to-indigo-500 text-sm font-bold uppercase tracking-tight text-slate-950 ${palette.brandGlow}`}
+        >
           <FiGlobe className="h-5 w-5" />
         </div>
         <div>
-          <p className="text-base font-semibold tracking-wide text-slate-100">
+          <p
+            className={`text-base font-semibold tracking-wide ${
+              theme === "dark" ? "text-slate-100" : "text-slate-900"
+            }`}
+          >
             Aura Chains
           </p>
-          <p className="text-xs text-slate-400">
+          <p className={`text-xs ${palette.muted}`}>
             Blockchain + IoT supply chain visibility
           </p>
         </div>
       </div>
 
-      <nav className="hidden items-center gap-8 text-sm text-slate-300 md:flex">
-        <a href="#" className="inline-flex items-center gap-1 hover:text-white">
+      <nav
+        className={`hidden items-center gap-6 text-sm ${palette.muted} md:flex`}
+      >
+        <a
+          href="#"
+          className={`inline-flex items-center gap-1 transition ${
+            theme === "dark" ? "hover:text-white" : "hover:text-slate-900"
+          }`}
+        >
           <FiBox className="h-4 w-4" />
           Product
         </a>
-        <a href="#" className="inline-flex items-center gap-1 hover:text-white">
+        <a
+          href="#"
+          className={`inline-flex items-center gap-1 transition ${
+            theme === "dark" ? "hover:text-white" : "hover:text-slate-900"
+          }`}
+        >
           <FiEye className="h-4 w-4" />
           Dashboards
         </a>
-        <a href="#" className="inline-flex items-center gap-1 hover:text-white">
+        <a
+          href="#"
+          className={`inline-flex items-center gap-1 transition ${
+            theme === "dark" ? "hover:text-white" : "hover:text-slate-900"
+          }`}
+        >
           <FiFileText className="h-4 w-4" />
           Docs
         </a>
-        <a href="#" className="inline-flex items-center gap-1 hover:text-white">
-          <FiTag className="h-4 w-4" />
-          Pricing
-        </a>
-        <button className="inline-flex items-center gap-2 rounded-full border border-cyan-400/60 bg-cyan-400/10 px-4 py-2 text-xs font-medium text-cyan-200 shadow-sm shadow-cyan-500/30 hover:bg-cyan-400/20">
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+            theme === "dark"
+              ? "border-slate-700 bg-slate-900/70 text-slate-100 hover:border-slate-500"
+              : "border-slate-200 bg-white text-slate-700 shadow-sm hover:border-slate-300"
+          }`}
+        >
+          {theme === "dark" ? (
+            <>
+              <FiSun className="h-4 w-4" />
+              Light mode
+            </>
+          ) : (
+            <>
+              <FiMoon className="h-4 w-4" />
+              Dark mode
+            </>
+          )}
+        </button>
+        <button className="inline-flex items-center gap-2 rounded-full border border-cyan-400/60 bg-gradient-to-r from-cyan-400/90 to-emerald-400/90 px-4 py-2 text-xs font-semibold text-slate-950 shadow-sm shadow-cyan-500/30 hover:from-cyan-300 hover:to-emerald-300">
           <FiArrowRight className="h-4 w-4" />
           Launch app
         </button>
@@ -229,7 +324,11 @@ function Header({ mobileNavOpen, setMobileNavOpen }) {
       {/* mobile */}
       <button
         type="button"
-        className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 md:hidden"
+        className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs md:hidden ${
+          theme === "dark"
+            ? "border-slate-700 bg-slate-900 text-slate-200"
+            : "border-slate-200 bg-white text-slate-700 shadow-sm"
+        }`}
         onClick={() => setMobileNavOpen((v) => !v)}
       >
         <FiMenu className="h-4 w-4" />
@@ -237,25 +336,53 @@ function Header({ mobileNavOpen, setMobileNavOpen }) {
       </button>
 
       {mobileNavOpen && (
-        <div className="absolute inset-x-0 top-14 z-50 rounded-2xl border border-slate-800 bg-slate-950/95 p-4 text-sm text-slate-200 shadow-xl shadow-black/50 md:hidden">
+        <div
+          className={`absolute inset-x-0 top-14 z-50 rounded-2xl p-4 text-sm md:hidden ${palette.surface}`}
+        >
           <div className="flex flex-col gap-3">
-            <a href="#" className="inline-flex items-center gap-2 hover:text-white">
+            <a
+              href="#"
+              className="inline-flex items-center gap-2 transition hover:opacity-80"
+            >
               <FiBox className="h-4 w-4" />
               Product
             </a>
-            <a href="#" className="inline-flex items-center gap-2 hover:text-white">
+            <a
+              href="#"
+              className="inline-flex items-center gap-2 transition hover:opacity-80"
+            >
               <FiEye className="h-4 w-4" />
               Dashboards
             </a>
-            <a href="#" className="inline-flex items-center gap-2 hover:text-white">
+            <a
+              href="#"
+              className="inline-flex items-center gap-2 transition hover:opacity-80"
+            >
               <FiFileText className="h-4 w-4" />
               Docs
             </a>
-            <a href="#" className="inline-flex items-center gap-2 hover:text-white">
-              <FiTag className="h-4 w-4" />
-              Pricing
-            </a>
-            <button className="mt-2 inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-400/60 bg-cyan-400/10 px-4 py-2 text-xs font-medium text-cyan-200">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-xs font-medium transition ${
+                theme === "dark"
+                  ? "border-slate-600/60 bg-slate-900/60 text-slate-100 hover:border-cyan-400/60"
+                  : "border-slate-200 bg-white text-slate-700 shadow-sm hover:border-cyan-300"
+              }`}
+            >
+              {theme === "dark" ? (
+                <>
+                  <FiSun className="h-4 w-4" />
+                  Light mode
+                </>
+              ) : (
+                <>
+                  <FiMoon className="h-4 w-4" />
+                  Dark mode
+                </>
+              )}
+            </button>
+            <button className="mt-2 inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-400/60 bg-gradient-to-r from-cyan-400 to-emerald-400 px-4 py-2 text-xs font-semibold text-slate-950 shadow-sm shadow-cyan-500/30">
               <FiArrowRight className="h-4 w-4" />
               Launch app
             </button>
@@ -266,28 +393,46 @@ function Header({ mobileNavOpen, setMobileNavOpen }) {
   );
 }
 
-function Hero({ activeRoleKey, setActiveRoleKey, activeRole }) {
+function Hero({ activeRoleKey, setActiveRoleKey, activeRole, theme, palette }) {
   return (
     <section className="grid gap-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.2fr)] lg:items-center">
       {/* Left: landing copy */}
       <div className="space-y-8">
-        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/5 px-3 py-1.5 text-xs font-medium text-emerald-200">
+        <div
+          className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium ${
+            theme === "dark"
+              ? "border-emerald-400/30 bg-emerald-400/5 text-emerald-200"
+              : "border-emerald-500/30 bg-emerald-50 text-emerald-700"
+          }`}
+        >
           <FiActivity className="h-3.5 w-3.5" />
           Live telemetry, tamper alerts & on-chain contracts in one view
         </div>
 
         <div className="space-y-4">
-          <h1 className="text-balance text-4xl font-semibold tracking-tight text-slate-50 sm:text-5xl lg:text-6xl">
-            Dark-mode control tower
+          <h1
+            className={`text-balance text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl ${
+              theme === "dark" ? "text-slate-50" : "text-slate-900"
+            }`}
+          >
+            Modern control tower
             <br />
             for your{" "}
             <span className="bg-gradient-to-r from-cyan-400 via-emerald-400 to-indigo-400 bg-clip-text text-transparent">
               critical shipments.
             </span>
           </h1>
-          <p className="max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg">
+          <p
+            className={`max-w-xl text-base leading-relaxed sm:text-lg ${
+              theme === "dark" ? "text-slate-300" : "text-slate-700"
+            }`}
+          >
             Aura Chains is a secure supply chain tracking platform for{" "}
-            <span className="font-semibold text-slate-100">
+            <span
+              className={`font-semibold ${
+                theme === "dark" ? "text-slate-100" : "text-slate-900"
+              }`}
+            >
               exporters, buyers and logistics providers
             </span>
             . See where every container is, who has custody, and what the sensors
@@ -300,24 +445,33 @@ function Hero({ activeRoleKey, setActiveRoleKey, activeRole }) {
             <FiArrowRight className="h-4 w-4" />
             Get a demo
           </button>
-          <button className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/70 px-5 py-3 text-xs font-semibold text-slate-200 hover:border-slate-500">
+          <button
+            className={`inline-flex items-center gap-2 rounded-full border px-5 py-3 text-xs font-semibold transition ${
+              theme === "dark"
+                ? "border-slate-700 bg-slate-900/70 text-slate-200 hover:border-slate-500"
+                : "border-slate-200 bg-white text-slate-800 shadow-sm hover:border-slate-300"
+            }`}
+          >
             <FiEye className="h-4 w-4" />
             Explore dashboards
           </button>
         </div>
 
-        <div className="flex flex-wrap gap-3 text-xs text-slate-400">
+        <div className={`flex flex-wrap gap-3 text-xs ${palette.muted}`}>
           <BadgeItem
             icon={<FiShield className="h-3.5 w-3.5" />}
             label="End-to-end audit trail"
+            theme={theme}
           />
           <BadgeItem
             icon={<FiCpu className="h-3.5 w-3.5" />}
             label="IoT-ready from day one"
+            theme={theme}
           />
           <BadgeItem
             icon={<FiLock className="h-3.5 w-3.5" />}
             label="Role-based access control"
+            theme={theme}
           />
         </div>
       </div>
@@ -327,14 +481,22 @@ function Hero({ activeRoleKey, setActiveRoleKey, activeRole }) {
         activeRoleKey={activeRoleKey}
         setActiveRoleKey={setActiveRoleKey}
         activeRole={activeRole}
+        theme={theme}
+        palette={palette}
       />
     </section>
   );
 }
 
-function BadgeItem({ icon, label }) {
+function BadgeItem({ icon, label, theme }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full bg-slate-900/70 px-3 py-1.5">
+    <span
+      className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 ${
+        theme === "dark"
+          ? "bg-slate-900/70 text-slate-100"
+          : "bg-white/80 text-slate-700 shadow-sm ring-1 ring-slate-200/70"
+      }`}
+    >
       {icon}
       <span>{label}</span>
     </span>
@@ -345,17 +507,23 @@ function RoleDashboardPreview({
   activeRoleKey,
   setActiveRoleKey,
   activeRole,
+  theme,
+  palette,
 }) {
   const roles = Object.values(ROLE_CONFIG);
 
   return (
     <section className="relative">
       <div className="pointer-events-none absolute inset-x-10 top-0 -z-10 h-40 bg-[radial-gradient(circle_at_top,_#22d3ee33,_transparent_55%)]" />
-      <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-5 shadow-2xl shadow-cyan-500/30 backdrop-blur-sm lg:p-6">
+      <div
+        className={`rounded-3xl p-5 shadow-2xl backdrop-blur-sm lg:p-6 ${palette.surface}`}
+      >
         {/* Top row: role switch + info */}
         <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="w-full sm:w-auto">
-            <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-slate-900/90 p-1 text-xs sm:inline-flex sm:rounded-full">
+            <div
+              className={`flex flex-wrap items-center gap-2 rounded-2xl p-1 text-xs sm:inline-flex sm:rounded-full ${palette.softSurface}`}
+            >
               {roles.map((role) => {
                 const isActive = role.key === activeRoleKey;
                 return (
@@ -367,7 +535,9 @@ function RoleDashboardPreview({
                       "flex items-center gap-1 rounded-full px-3 py-1 transition",
                       isActive
                         ? "bg-gradient-to-r from-cyan-400 to-emerald-400 text-slate-950 text-xs font-semibold"
-                        : "text-slate-400 hover:text-slate-100",
+                        : theme === "dark"
+                          ? "text-slate-400 hover:text-slate-100"
+                          : "text-slate-600 hover:text-slate-900",
                     ].join(" ")}
                   >
                     {role.key === "exporter" && (
@@ -384,17 +554,33 @@ function RoleDashboardPreview({
                 );
               })}
             </div>
-            <p className="mt-3 max-w-xs text-xs leading-relaxed text-slate-300">
+            <p
+              className={`mt-3 max-w-xs text-xs leading-relaxed ${
+                theme === "dark" ? "text-slate-300" : "text-slate-700"
+              }`}
+            >
               {activeRole.blurb}
             </p>
           </div>
 
           <div className="flex flex-row flex-wrap items-center gap-3 text-xs sm:flex-col sm:items-end sm:gap-2">
-            <span className="inline-flex items-center gap-2 rounded-full bg-slate-900/80 px-3 py-1 text-slate-300">
+            <span
+              className={`inline-flex items-center gap-2 rounded-full px-3 py-1 ${
+                theme === "dark"
+                  ? "bg-slate-900/80 text-slate-300"
+                  : "bg-slate-100 text-slate-700"
+              }`}
+            >
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
               Telemetry live
             </span>
-            <span className="inline-flex items-center gap-2 rounded-full bg-slate-900/60 px-2.5 py-1 text-slate-400">
+            <span
+              className={`inline-flex items-center gap-2 rounded-full px-2.5 py-1 ${
+                theme === "dark"
+                  ? "bg-slate-900/60 text-slate-400"
+                  : "bg-white text-slate-700 ring-1 ring-slate-200"
+              }`}
+            >
               <FiShield className="h-3.5 w-3.5" />
               On-chain verified
             </span>
@@ -406,18 +592,32 @@ function RoleDashboardPreview({
           {activeRole.stats.map((stat) => (
             <div
               key={stat.label}
-              className="rounded-2xl border border-slate-800 bg-slate-900/80 px-3.5 py-3 text-xs"
+              className={`rounded-2xl px-3.5 py-3 text-xs ${palette.softSurface}`}
             >
-              <p className="flex items-center justify-between text-slate-400">
+              <p
+                className={`flex items-center justify-between ${palette.muted}`}
+              >
                 <span>{stat.label}</span>
-                <span className="text-[11px] text-slate-500">
+                <span
+                  className={`text-[11px] ${
+                    theme === "dark" ? "text-slate-500" : "text-slate-500"
+                  }`}
+                >
                   {stat.chip}
                 </span>
               </p>
-              <p className="mt-1.5 text-2xl font-semibold text-slate-50">
+              <p
+                className={`mt-1.5 text-2xl font-semibold ${
+                  theme === "dark" ? "text-slate-50" : "text-slate-900"
+                }`}
+              >
                 {stat.value}
               </p>
-              <div className="mt-3 h-1 rounded-full bg-slate-800">
+              <div
+                className={`mt-3 h-1 rounded-full ${
+                  theme === "dark" ? "bg-slate-800" : "bg-slate-200"
+                }`}
+              >
                 <div
                   className={[
                     "h-full rounded-full bg-gradient-to-r",
@@ -449,18 +649,34 @@ function RoleDashboardPreview({
               {activeRole.shipments.map((shipment) => (
                 <div
                   key={shipment.id}
-                  className="rounded-2xl border border-slate-800 bg-slate-900/80 px-3.5 py-3 text-xs"
+                  className={`rounded-2xl px-3.5 py-3 text-xs ${palette.softSurface}`}
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-slate-100">
+                      <p
+                        className={`font-semibold ${
+                          theme === "dark"
+                            ? "text-slate-100"
+                            : "text-slate-900"
+                        }`}
+                      >
                         {shipment.id}
                       </p>
-                      <p className="text-[11px] text-slate-400">
+                      <p
+                        className={`text-[11px] ${
+                          theme === "dark" ? "text-slate-400" : "text-slate-600"
+                        }`}
+                      >
                         {shipment.route}
                       </p>
                     </div>
-                    <span className="inline-flex items-center gap-2 rounded-full bg-slate-950/60 px-3 py-1 text-[11px]">
+                    <span
+                      className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] ${
+                        theme === "dark"
+                          ? "bg-slate-950/60"
+                          : "bg-slate-100 text-slate-700"
+                      }`}
+                    >
                       <span className={shipment.statusTone}>
                         <FiTruck className="h-3.5 w-3.5" />
                       </span>
@@ -469,7 +685,11 @@ function RoleDashboardPreview({
                       </span>
                     </span>
                   </div>
-                  <div className="mt-3 h-1.5 rounded-full bg-slate-800">
+                  <div
+                    className={`mt-3 h-1.5 rounded-full ${
+                      theme === "dark" ? "bg-slate-800" : "bg-slate-200"
+                    }`}
+                  >
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400"
                       style={{ width: shipment.progress }}
@@ -483,12 +703,12 @@ function RoleDashboardPreview({
           {/* Right side: NFC / alerts / mini-route */}
           <div className="space-y-3 lg:col-span-2">
             {activeRoleKey === "buyer" ? (
-              <NfcWidget />
+              <NfcWidget theme={theme} palette={palette} />
             ) : (
-              <AlertWidget alerts={activeRole.alerts} />
+              <AlertWidget alerts={activeRole.alerts} theme={theme} palette={palette} />
             )}
 
-            <RouteWidget />
+            <RouteWidget theme={theme} palette={palette} />
           </div>
         </div>
       </div>
@@ -498,7 +718,7 @@ function RoleDashboardPreview({
 
 /* --- Landing content section: How it works --- */
 
-function HowItWorks() {
+function HowItWorks({ theme, palette }) {
   const steps = [
     {
       icon: <FiKey className="h-5 w-5" />,
@@ -521,16 +741,24 @@ function HowItWorks() {
     <section className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-slate-50 sm:text-2xl">
+          <h2
+            className={`text-xl font-semibold sm:text-2xl ${
+              theme === "dark" ? "text-slate-50" : "text-slate-900"
+            }`}
+          >
             How Aura Chains fits into your existing operations.
           </h2>
-          <p className="max-w-2xl text-sm text-slate-300 sm:text-base">
+          <p
+            className={`max-w-2xl text-sm sm:text-base ${
+              theme === "dark" ? "text-slate-300" : "text-slate-700"
+            }`}
+          >
             The platform plugs into the way you already ship — it simply gives
             all parties the same, trusted view of what is happening from
             departure to delivery.
           </p>
         </div>
-        <p className="text-xs text-slate-500">
+        <p className={`text-xs ${palette.subMuted}`}>
           Works with NFC tags, GPS devices and existing TMS tools.
         </p>
       </div>
@@ -539,15 +767,31 @@ function HowItWorks() {
         {steps.map((step) => (
           <div
             key={step.title}
-            className="group relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-950/80 p-5 text-sm shadow-lg shadow-black/40"
+            className={`group relative overflow-hidden rounded-3xl p-5 text-sm shadow-lg ${palette.surface}`}
           >
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-slate-900/80 px-3 py-1 text-xs text-slate-200">
-              <span className="rounded-full bg-slate-950/80 p-1.5 text-cyan-300">
+            <div
+              className={`mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs ${
+                theme === "dark"
+                  ? "bg-slate-900/80 text-slate-200"
+                  : "bg-slate-100 text-slate-800"
+              }`}
+            >
+              <span
+                className={`rounded-full p-1.5 ${
+                  theme === "dark"
+                    ? "bg-slate-950/80 text-cyan-300"
+                    : "bg-white text-cyan-600 ring-1 ring-slate-200"
+                }`}
+              >
                 {step.icon}
               </span>
               <span className="font-semibold">{step.title}</span>
             </div>
-            <p className="text-sm leading-relaxed text-slate-300">
+            <p
+              className={`text-sm leading-relaxed ${
+                theme === "dark" ? "text-slate-300" : "text-slate-700"
+              }`}
+            >
               {step.body}
             </p>
           </div>
@@ -559,7 +803,7 @@ function HowItWorks() {
 
 /* --- Role portals --- */
 
-function RolePortals() {
+function RolePortals({ theme, palette }) {
   const roles = [
     {
       key: "exporter",
@@ -603,16 +847,24 @@ function RolePortals() {
     <section className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-slate-50 sm:text-2xl">
+          <h2
+            className={`text-xl font-semibold sm:text-2xl ${
+              theme === "dark" ? "text-slate-50" : "text-slate-900"
+            }`}
+          >
             Three role-specific dashboards. One trusted data layer.
           </h2>
-          <p className="max-w-xl text-sm text-slate-300 sm:text-base">
+          <p
+            className={`max-w-xl text-sm sm:text-base ${
+              theme === "dark" ? "text-slate-300" : "text-slate-700"
+            }`}
+          >
             Aura Chains shows each participant only what they need, while
             keeping the underlying shipment record shared, verifiable and
             consistent.
           </p>
         </div>
-        <p className="text-xs text-slate-500">
+        <p className={`text-xs ${palette.subMuted}`}>
           SSO · 2FA · granular permissions per role.
         </p>
       </div>
@@ -621,17 +873,27 @@ function RolePortals() {
         {roles.map((role) => (
           <div
             key={role.key}
-            className="group relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-950/80 p-5 text-sm shadow-lg shadow-black/40"
+            className={`group relative overflow-hidden rounded-3xl p-5 text-sm shadow-lg ${palette.surface}`}
           >
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60" />
             <div className="absolute inset-x-[-40%] top-[-40%] h-40 bg-gradient-to-r from-transparent via-slate-700/15 to-transparent blur-3xl" />
 
             <div className="relative space-y-3">
-              <div className="inline-flex items-center gap-2 rounded-full bg-slate-900/80 px-3 py-1.5 text-xs text-slate-200">
+              <div
+                className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs ${
+                  theme === "dark"
+                    ? "bg-slate-900/80 text-slate-200"
+                    : "bg-slate-100 text-slate-800"
+                }`}
+              >
                 {role.icon}
                 <span className="font-semibold">{role.title}</span>
               </div>
-              <ul className="space-y-2 text-sm text-slate-300">
+              <ul
+                className={`space-y-2 text-sm ${
+                  theme === "dark" ? "text-slate-300" : "text-slate-700"
+                }`}
+              >
                 {role.points.map((point) => (
                   <li key={point} className="flex gap-2">
                     <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400" />
@@ -639,7 +901,13 @@ function RolePortals() {
                   </li>
                 ))}
               </ul>
-              <button className="mt-4 inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/90 px-4 py-2 text-xs font-semibold text-slate-200 transition group-hover:border-cyan-400/60 group-hover:text-cyan-200">
+              <button
+                className={`mt-4 inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition ${
+                  theme === "dark"
+                    ? "border-slate-800 bg-slate-900/90 text-slate-200"
+                    : "border-slate-200 bg-white text-slate-800 shadow-sm"
+                } group-hover:border-cyan-400/60 group-hover:text-cyan-600`}
+              >
                 {role.cta}
                 <FiArrowRight className="h-3.5 w-3.5" />
               </button>
@@ -660,20 +928,32 @@ function RolePortals() {
 
 /* --- Realtime section --- */
 
-function RealtimeSection() {
+function RealtimeSection({ theme, palette }) {
   return (
     <section className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.1fr)] lg:items-start">
       {/* Copy & bullets */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-slate-50 sm:text-2xl">
+        <h2
+          className={`text-xl font-semibold sm:text-2xl ${
+            theme === "dark" ? "text-slate-50" : "text-slate-900"
+          }`}
+        >
           Real-time IoT monitoring for every lane.
         </h2>
-        <p className="text-sm text-slate-300 sm:text-base">
+        <p
+          className={`text-sm sm:text-base ${
+            theme === "dark" ? "text-slate-300" : "text-slate-700"
+          }`}
+        >
           Attach GPS trackers, temperature probes, door sensors or NFC tags —
           Aura Chains reads them all and surfaces issues in a simple, dark-mode
           dashboard your team can actually use.
         </p>
-        <div className="space-y-3 text-sm text-slate-300">
+        <div
+          className={`space-y-3 text-sm ${
+            theme === "dark" ? "text-slate-300" : "text-slate-700"
+          }`}
+        >
           <Bullet
             icon={<FiMapPin className="h-4 w-4" />}
             title="Fleet-wide live map"
@@ -695,13 +975,21 @@ function RealtimeSection() {
       {/* UI preview cards */}
       <div className="space-y-4">
         {/* Map card */}
-        <div className="rounded-3xl border border-slate-800 bg-slate-950/80 p-4 shadow-xl shadow-black/50">
-          <div className="mb-3 flex items-center justify-between text-xs text-slate-300">
+        <div className={`rounded-3xl p-4 shadow-xl ${palette.surface}`}>
+          <div
+            className={`mb-3 flex items-center justify-between text-xs ${palette.muted}`}
+          >
             <span className="inline-flex items-center gap-2">
               <FiMapPin className="h-4 w-4" />
               In-transit shipments
             </span>
-            <span className="rounded-full bg-slate-900/90 px-3 py-1 text-[11px] text-slate-400">
+            <span
+              className={`rounded-full px-3 py-1 text-[11px] ${
+                theme === "dark"
+                  ? "bg-slate-900/90 text-slate-400"
+                  : "bg-slate-100 text-slate-700"
+              }`}
+            >
               27 active · 3 with alerts
             </span>
           </div>
@@ -717,7 +1005,9 @@ function RealtimeSection() {
             <RouteDot left="84%" top="24%" tone="bg-amber-400" />
             <RouteLine />
           </div>
-          <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
+          <div
+            className={`mt-3 flex items-center justify-between text-xs ${palette.muted}`}
+          >
             <span>Last IoT update: 14 seconds ago</span>
             <span>On-time deliveries (24h): 96%</span>
           </div>
@@ -725,13 +1015,23 @@ function RealtimeSection() {
 
         {/* Alert & timeline card */}
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-3 text-xs">
+          <div className={`rounded-2xl p-3 text-xs ${palette.surface}`}>
             <div className="mb-2 flex items-center justify-between">
-              <span className="inline-flex items-center gap-2 text-slate-200">
+              <span
+                className={`inline-flex items-center gap-2 ${
+                  theme === "dark" ? "text-slate-200" : "text-slate-900"
+                }`}
+              >
                 <FiAlertTriangle className="h-4 w-4" />
                 Critical alerts
               </span>
-              <span className="rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] text-slate-400">
+              <span
+                className={`rounded-full px-2.5 py-1 text-[11px] ${
+                  theme === "dark"
+                    ? "bg-slate-900/80 text-slate-400"
+                    : "bg-slate-100 text-slate-700"
+                }`}
+              >
                 Tamper · temperature · route
               </span>
             </div>
@@ -754,13 +1054,17 @@ function RealtimeSection() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-3 text-xs">
+          <div className={`rounded-2xl p-3 text-xs ${palette.surface}`}>
             <div className="mb-2 flex items-center justify-between">
-              <span className="inline-flex items-center gap-2 text-slate-200">
+              <span
+                className={`inline-flex items-center gap-2 ${
+                  theme === "dark" ? "text-slate-200" : "text-slate-900"
+                }`}
+              >
                 <FiCompass className="h-4 w-4" />
                 Status timeline
               </span>
-              <span className="text-[11px] text-slate-400">
+              <span className={`text-[11px] ${palette.muted}`}>
                 Shipment: SHP-3421
               </span>
             </div>
@@ -950,20 +1254,40 @@ function BlockchainSection() {
 
 /* --- smaller widgets --- */
 
-function NfcWidget() {
+function NfcWidget({ theme, palette }) {
   return (
-    <div className="rounded-2xl border border-emerald-400/40 bg-gradient-to-br from-emerald-500/10 via-slate-900/90 to-slate-950 px-3.5 py-3.5 text-xs">
+    <div
+      className={`rounded-2xl border px-3.5 py-3.5 text-xs ${
+        theme === "dark"
+          ? "border-emerald-400/40 bg-gradient-to-br from-emerald-500/10 via-slate-900/90 to-slate-950"
+          : "border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-slate-50 shadow-sm"
+      }`}
+    >
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="inline-flex items-center gap-2 text-emerald-200">
+        <span
+          className={`inline-flex items-center gap-2 ${
+            theme === "dark" ? "text-emerald-200" : "text-emerald-700"
+          }`}
+        >
           <FiCpu className="h-4 w-4" />
           NFC tag scan
         </span>
-        <span className="inline-flex items-center gap-2 rounded-full bg-slate-900/70 px-2.5 py-1 text-[11px] text-slate-300">
+        <span
+          className={`inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[11px] ${
+            theme === "dark"
+              ? "bg-slate-900/70 text-slate-300"
+              : "bg-white text-slate-700 border border-emerald-100"
+          }`}
+        >
           <FiShield className="h-3.5 w-3.5" />
           Blockchain verified
         </span>
       </div>
-      <p className="mb-3 text-xs text-emerald-50">
+      <p
+        className={`mb-3 text-xs ${
+          theme === "dark" ? "text-emerald-50" : "text-emerald-800"
+        }`}
+      >
         Ask your team to tap the package tag on arrival to confirm product and
         seal status before signing off.
       </p>
@@ -971,17 +1295,31 @@ function NfcWidget() {
         <FiCheckCircle className="h-4 w-4" />
         Start NFC scan
       </button>
-      <div className="rounded-xl border border-emerald-400/40 bg-slate-950/80 px-3 py-2">
+      <div
+        className={`rounded-xl border px-3 py-2 ${
+          theme === "dark"
+            ? "border-emerald-400/40 bg-slate-950/80"
+            : "border-emerald-100 bg-white"
+        }`}
+      >
         <div className="flex items-center justify-between">
-          <span className="text-[11px] text-emerald-200">
+          <span
+            className={`text-[11px] ${
+              theme === "dark" ? "text-emerald-200" : "text-emerald-700"
+            }`}
+          >
             Last scan: SHP-4412
           </span>
-          <span className="inline-flex items-center gap-1 text-[11px] text-emerald-200">
+          <span
+            className={`inline-flex items-center gap-1 text-[11px] ${
+              theme === "dark" ? "text-emerald-200" : "text-emerald-700"
+            }`}
+          >
             <FiCheckCircle className="h-3.5 w-3.5" />
             Product authentic
           </span>
         </div>
-        <p className="mt-1 text-[11px] text-slate-400">
+        <p className={`mt-1 text-[11px] ${palette.muted}`}>
           Tamper seal:{" "}
           <span className="text-emerald-300">intact</span> · Batch #AC-2045 ·
           Block #74532
@@ -991,15 +1329,25 @@ function NfcWidget() {
   );
 }
 
-function AlertWidget({ alerts }) {
+function AlertWidget({ alerts, theme, palette }) {
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/80 px-3.5 py-3.5 text-xs">
+    <div className={`rounded-2xl px-3.5 py-3.5 text-xs ${palette.surface}`}>
       <div className="mb-2 flex items-center justify-between">
-        <span className="inline-flex items-center gap-2 text-slate-200">
+        <span
+          className={`inline-flex items-center gap-2 ${
+            theme === "dark" ? "text-slate-200" : "text-slate-900"
+          }`}
+        >
           <FiBell className="h-4 w-4" />
           Live alerts
         </span>
-        <span className="rounded-full bg-slate-950/70 px-2.5 py-1 text-[11px] text-slate-400">
+        <span
+          className={`rounded-full px-2.5 py-1 text-[11px] ${
+            theme === "dark"
+              ? "bg-slate-950/70 text-slate-400"
+              : "bg-slate-100 text-slate-700"
+          }`}
+        >
           {alerts.length} active
         </span>
       </div>
@@ -1007,12 +1355,20 @@ function AlertWidget({ alerts }) {
         {alerts.map((alert) => (
           <div
             key={alert}
-            className="flex gap-2 rounded-xl bg-slate-950/80 px-3 py-2"
+            className={`flex gap-2 rounded-xl px-3 py-2 ${
+              theme === "dark" ? "bg-slate-950/80" : "bg-slate-100"
+            }`}
           >
             <FiAlertTriangle className="mt-0.5 h-3.5 w-3.5 text-amber-300" />
             <div>
-              <p className="text-[11px] text-slate-200">{alert}</p>
-              <p className="mt-0.5 text-[11px] text-slate-500">
+              <p
+                className={`text-[11px] ${
+                  theme === "dark" ? "text-slate-200" : "text-slate-900"
+                }`}
+              >
+                {alert}
+              </p>
+              <p className={`mt-0.5 text-[11px] ${palette.muted}`}>
                 Just now · click for shipment details
               </p>
             </div>
@@ -1023,25 +1379,35 @@ function AlertWidget({ alerts }) {
   );
 }
 
-function RouteWidget() {
+function RouteWidget({ theme, palette }) {
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3 text-xs">
+    <div className={`rounded-2xl p-3 text-xs ${palette.surface}`}>
       <div className="mb-2 flex items-center justify-between">
-        <span className="inline-flex items-center gap-2 text-slate-200">
+        <span
+          className={`inline-flex items-center gap-2 ${
+            theme === "dark" ? "text-slate-200" : "text-slate-900"
+          }`}
+        >
           <FiCompass className="h-4 w-4" />
           Route & custody
         </span>
-        <span className="text-[11px] text-slate-500">
+        <span className={`text-[11px] ${palette.muted}`}>
           Exporter → logistics → buyer
         </span>
       </div>
-      <div className="relative mb-2 h-20 overflow-hidden rounded-xl bg-gradient-to-br from-slate-900 to-slate-950">
+      <div
+        className={`relative mb-2 h-20 overflow-hidden rounded-xl bg-gradient-to-br ${
+          theme === "dark"
+            ? "from-slate-900 to-slate-950"
+            : "from-slate-100 via-white to-slate-200"
+        }`}
+      >
         <div className="absolute left-4 top-10 h-[2px] w-[70%] bg-gradient-to-r from-cyan-400/40 via-emerald-400/60 to-indigo-500/60" />
         <RouteDot left="14%" top="52%" tone="bg-cyan-400" />
         <RouteDot left="45%" top="50%" tone="bg-emerald-400" />
         <RouteDot left="74%" top="46%" tone="bg-slate-300" />
       </div>
-      <div className="flex items-center justify-between text-[11px] text-slate-400">
+      <div className={`flex items-center justify-between text-[11px] ${palette.muted}`}>
         <span>Last custody change: 32 seconds ago</span>
         <span>Latency under 2 seconds</span>
       </div>
@@ -1163,25 +1529,51 @@ function IdentityLine({ name, role, meta }) {
   );
 }
 
-function Footer() {
+function Footer({ theme, palette }) {
   return (
-    <footer className="mt-10 border-t border-slate-900 pt-6 text-xs text-slate-500">
+    <footer
+      className={`mt-10 border-t pt-6 text-xs ${
+        theme === "dark"
+          ? "border-slate-900 text-slate-500"
+          : "border-slate-200 text-slate-600"
+      }`}
+    >
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <p>© {new Date().getFullYear()} Aura Chains. All rights reserved.</p>
         <div className="flex flex-wrap gap-4">
-          <a href="#" className="inline-flex items-center gap-1 hover:text-slate-300">
+          <a
+            href="#"
+            className={`inline-flex items-center gap-1 ${
+              theme === "dark" ? "hover:text-slate-300" : "hover:text-slate-900"
+            }`}
+          >
             <FiActivity className="h-3.5 w-3.5" />
             Status
           </a>
-          <a href="#" className="inline-flex items-center gap-1 hover:text-slate-300">
+          <a
+            href="#"
+            className={`inline-flex items-center gap-1 ${
+              theme === "dark" ? "hover:text-slate-300" : "hover:text-slate-900"
+            }`}
+          >
             <FiShield className="h-3.5 w-3.5" />
             Security
           </a>
-          <a href="#" className="inline-flex items-center gap-1 hover:text-slate-300">
+          <a
+            href="#"
+            className={`inline-flex items-center gap-1 ${
+              theme === "dark" ? "hover:text-slate-300" : "hover:text-slate-900"
+            }`}
+          >
             <FiLock className="h-3.5 w-3.5" />
             Privacy
           </a>
-          <a href="#" className="inline-flex items-center gap-1 hover:text-slate-300">
+          <a
+            href="#"
+            className={`inline-flex items-center gap-1 ${
+              theme === "dark" ? "hover:text-slate-300" : "hover:text-slate-900"
+            }`}
+          >
             <FiFileText className="h-3.5 w-3.5" />
             Docs
           </a>
@@ -1246,7 +1638,4 @@ function AboutSection() {
   );
 }
 
-/* missing icons from react-icons */
-import { FiTag, FiMenu } from "react-icons/fi";
-
-export default page;
+export default HomePage;

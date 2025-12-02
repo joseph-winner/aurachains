@@ -90,7 +90,7 @@ const alerts = [
     },
 ];
 
-function page() {
+function SellerPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState({
         goldType: "",
@@ -544,4 +544,4 @@ function page() {
     );
 }
 
-export default page;
+export default SellerPage;
