@@ -188,7 +188,7 @@ function page() {
 
 function Header({ mobileNavOpen, setMobileNavOpen }) {
   return (
-    <header className="flex items-center justify-between gap-4">
+    <header className="relative flex items-center justify-between gap-4">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-400 to-indigo-500 text-sm font-bold uppercase tracking-tight text-slate-950 shadow-lg shadow-cyan-500/40">
           <FiGlobe className="h-5 w-5" />
@@ -237,7 +237,7 @@ function Header({ mobileNavOpen, setMobileNavOpen }) {
       </button>
 
       {mobileNavOpen && (
-        <div className="absolute inset-x-4 top-16 z-20 rounded-2xl border border-slate-800 bg-slate-950/95 p-4 text-sm text-slate-200 shadow-xl shadow-black/50 md:hidden">
+        <div className="absolute inset-x-0 top-14 z-50 rounded-2xl border border-slate-800 bg-slate-950/95 p-4 text-sm text-slate-200 shadow-xl shadow-black/50 md:hidden">
           <div className="flex flex-col gap-3">
             <a href="#" className="inline-flex items-center gap-2 hover:text-white">
               <FiBox className="h-4 w-4" />
